@@ -5,6 +5,7 @@ import { Note } from "./types";
 import NoteEditor from "./NoteEditor";
 import { JSONContent } from "@tiptap/react";
 import storage from "./storage";
+import debounce from "./debounce";
 
 const STORAGE_KEY = "notes";
 
@@ -21,12 +22,12 @@ const loadNotes = () => {
   return notes;
 };
 
-const saveNote = (note: Note) => {
+const saveNote = debounce((note: Note) => {
   const noteIds = storage.get<string[]>(STORAGE_KEY, []);
   const noteIdsWithoutNote = noteIds.filter((id) => id !== note.id);
   storage.set(STORAGE_KEY, [...noteIdsWithoutNote, note.id]);
   storage.set(`${STORAGE_KEY}: ${note.id}`, note);
-};
+}, 200);
 
 function App() {
   // 상태관리
@@ -35,20 +36,23 @@ function App() {
 
   const activeNote = activeNoteId ? notes[activeNoteId] : null;
 
-  const hnadleChangeNoteContent = (
+  const handleChangeNoteContent = (
     noteId: string,
     content: JSONContent,
     title = "New note"
   ) => {
+    const updatedNote = {
+      ...notes[noteId],
+      updatedAt: new Date(),
+      content,
+      title,
+    };
+
     setNotes((notes) => ({
       ...notes,
-      [noteId]: {
-        ...notes[noteId],
-        updatedAt: new Date(),
-        content,
-        title,
-      },
+      [noteId]: updatedNote,
     }));
+    saveNote(updatedNote);
   };
 
   // 노트 추가
@@ -104,7 +108,7 @@ function App() {
         <NoteEditor
           note={activeNote}
           onChange={(content, title) =>
-            hnadleChangeNoteContent(activeNote.id, content, title)
+            handleChangeNoteContent(activeNote.id, content, title)
           }
         />
       ) : (
