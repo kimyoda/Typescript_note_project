@@ -3,13 +3,14 @@ import styles from "./LoginPage.module.css";
 import storage from "./storage";
 import { AES, enc } from "crypto-js";
 import { v4 as uuidv4 } from "uuid";
+import { UserData } from "./types";
 
 // 패스워드 키 설정
 const PASSPHRASE_STORAGE_KEY = "passphrase";
 
 // 유저데이터 타입
 type Props = {
-  setUserData: (UserData: { username: string; passphrase: string }) => void;
+  setUserData: (UserData: UserData) => void;
 };
 
 const LoginPage = ({ setUserData }: Props) => {
