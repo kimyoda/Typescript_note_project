@@ -4,10 +4,33 @@ import { v4 as uuid } from "uuid";
 import { Note } from "./types";
 import NoteEditor from "./NoteEditor";
 import { JSONContent } from "@tiptap/react";
+import storage from "./storage";
+
+const STORAGE_KEY = "notes";
+
+const loadNotes = () => {
+  const noteIds = storage.get<string[]>(STORAGE_KEY, []);
+  const notes: Record<string, Note> = {};
+  noteIds.forEach((id) => {
+    const note = storage.get<Note>(`${STORAGE_KEY}: ${id}`);
+    notes[note.id] = {
+      ...note,
+      updatedAt: new Date(note.updatedAt),
+    };
+  });
+  return notes;
+};
+
+const saveNote = (note: Note) => {
+  const noteIds = storage.get<string[]>(STORAGE_KEY, []);
+  const noteIdsWithoutNote = noteIds.filter((id) => id !== note.id);
+  storage.set(STORAGE_KEY, [...noteIdsWithoutNote, note.id]);
+  storage.set(`${STORAGE_KEY}: ${note.id}`, note);
+};
 
 function App() {
   // 상태관리
-  const [notes, setNotes] = useState<Record<string, Note>>({});
+  const [notes, setNotes] = useState<Record<string, Note>>(() => loadNotes());
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
   const activeNote = activeNoteId ? notes[activeNoteId] : null;
@@ -41,6 +64,7 @@ function App() {
       [newNote.id]: newNote,
     }));
     setActiveNoteId(newNote.id);
+    saveNote(newNote);
   };
 
   const handleChangeActiveNote = (id: string) => {
